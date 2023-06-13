@@ -22,7 +22,7 @@ desired_fps = 30
 
 # Iterate over all .mp4 files in the input directory
 for filename in os.listdir(input_dir):
-    if filename.endswith(".mp4"):
+    if filename.endswith(".MOV"):
         video_path = os.path.join(input_dir, filename)
 
         # Initialize variables
@@ -47,7 +47,7 @@ for filename in os.listdir(input_dir):
 
         frame_counter = 0  # initialize frame counter
 
-        with mp_pose.Pose(min_detection_confidence=0.50, min_tracking_confidence=0.80) as pose:
+        with mp_pose.Pose(min_detection_confidence=0.50, min_tracking_confidence=0.75) as pose:
             while cap.isOpened():
                 success, image = cap.read()
                 if not success:
