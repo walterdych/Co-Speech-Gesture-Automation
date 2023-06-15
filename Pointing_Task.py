@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import os
 from scipy.signal import savgol_filter
+import matplotlib.pyplot as plt
 
 # Instantiate mediapipe
 mp_drawing = mp.solutions.drawing_utils
@@ -22,13 +23,14 @@ desired_fps = 30
 
 # Iterate over all .mp4 files in the input directory
 for filename in os.listdir(input_dir):
-    if filename.endswith(".MOV"):
+    if filename.endswith(".mp4"):
         video_path = os.path.join(input_dir, filename)
 
         # Initialize variables
         timestamps = []
         keypoints = []
         speeds = [0]  # add initial speed as 0 for the first frame
+        speeds_unsmooth = [0]  # add initial unsmoothed speed as 0 for the first frame
         annotations = []
         apexes = []  # separate list for apex annotations
 
@@ -85,12 +87,13 @@ for filename in os.listdir(input_dir):
 
         # Calculate speed and smooth it
         for i in range(1, len(keypoints)):
-            speed = np.sqrt(np.sum(np.square(np.subtract(keypoints[i], keypoints[i-1])))) / (timestamps[i] - timestamps[i-1])
-            speeds.append(speed)
-        speeds_smooth = savgol_filter(speeds, window_size, polynomial_order)
+            speed_unsmooth = np.sqrt(np.sum(np.square(np.subtract(keypoints[i], keypoints[i-1])))) / (timestamps[i] - timestamps[i-1])
+            speeds.append(speed_unsmooth)
+            speeds_unsmooth.append(speed_unsmooth)
+        speed_smooth = savgol_filter(speeds, window_size, polynomial_order)
 
         # Create a threshold to mark when the person performs a point
-        threshold = np.percentile(speeds_smooth, 75)
+        threshold = np.percentile(speed_smooth, 75)
 
         # Initialize the variables we need to keep track of the strokes
         inside_stroke = False
@@ -100,7 +103,7 @@ for filename in os.listdir(input_dir):
 
         # Create the annotations and track the intervals
         annotations = []
-        for i, speed in enumerate(speeds_smooth):
+        for i, speed in enumerate(speed_smooth):
             if speed > threshold:
                 if not inside_stroke:
                     # If we just started a new stroke, switch the annotation type and remember the start index
@@ -119,11 +122,11 @@ for filename in os.listdir(input_dir):
 
         # If the last frame was part of a stroke, save the interval
         if inside_stroke:
-            gesture_intervals.append((last_stroke_type, start_index, len(speeds_smooth)))
+            gesture_intervals.append((last_stroke_type, start_index, len(speed_smooth)))
 
         # Create the Apex and Full Extension annotations
-        apexes = [''] * len(speeds_smooth)
-        full_extensions = [''] * len(speeds_smooth)
+        apexes = [''] * len(speed_smooth)
+        full_extensions = [''] * len(speed_smooth)
         for i in range(len(gesture_intervals)):
             # Find the Apex in each stroke
             if gesture_intervals[i][0] == 'S':
@@ -139,8 +142,8 @@ for filename in os.listdir(input_dir):
         # Create pandas DataFrame
         df = pd.DataFrame({
             'Timestamp': timestamps,
-            'Keypoints': keypoints,
-            'Speed': speeds,
+            'Speed Smoothed': speed_smooth,
+            'Speed UnSmoothed': speeds_unsmooth,
             'Annotation': annotations,
             'Apex': apexes,
             'Full Extension': full_extensions
@@ -152,3 +155,23 @@ for filename in os.listdir(input_dir):
 
         # Save to CSV
         df.to_csv(output_path, index=False)
+
+        # Create a figure and axis
+        fig, ax = plt.subplots()
+
+        # Plot UnSmoothedSpeed as a time series
+        ax.plot(df['Timestamp'], df['Speed UnSmoothed'], label='UnSmoothed Speed', linestyle='solid')
+
+        # Plot smoothed speed as a time series
+        ax.plot(df['Timestamp'], df['Speed Smoothed'], label='Smoothed Speed', linestyle='dashed')
+
+        # Add labels and title
+        ax.set_xlabel('Timestamp')
+        ax.set_ylabel('Speed')
+        ax.set_title('Time Series of Speed and Smoothed Speed')
+
+        # Add a legend
+        ax.legend()
+
+        # Display the plot
+        plt.show()
