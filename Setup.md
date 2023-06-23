@@ -33,3 +33,24 @@
 
 6. Once the video is fully processed, a chart will be created to show the smoothed and unsmoothed speed vectors, this can also be commented out as it will pause the loop. See example below.
     ![Speed Vector Graphs](https://i.imgur.com/hmth8H3.jpg)
+
+    ```python
+     # Create a figure and axis
+        fig, ax = plt.subplots()
+
+        # Plot UnSmoothedSpeed as a time series
+        ax.plot(df['Timestamp'], df['Speed Unsmoothed'], label='UnSmoothed Speed', linestyle='solid')
+
+        # Plot smoothed speed as a time series
+        ax.plot(df['Timestamp'], df['Speed Smoothed'], label='Smoothed Speed', linestyle='solid')
+
+        # Add labels and title
+        ax.set_xlabel('Timestamp')
+        ax.set_ylabel('Speed')
+        ax.set_title('Time Series of Speed and Smoothed Speed')
+
+        # Add a legend
+        ax.legend()
+
+        # Display the plot
+        plt.show()
