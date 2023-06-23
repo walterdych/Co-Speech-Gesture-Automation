@@ -1,2 +1,3 @@
-VIDEOS/
-Motion Tracking Annotations/
+*.MOV
+*.mp4
+*.csv
