@@ -1,5 +1,3 @@
-# Author: Walter Dych, walterpdych@gmail.com
-
 import cv2
 import mediapipe as mp
 import numpy as np
@@ -160,28 +158,57 @@ for filename in os.listdir(input_dir):
         })
 
         # Create output filename
-        output_filename = os.path.splitext(filename)[0] + "_MT_Annotations.csv"
+        output_filename = os.path.splitext(filename)[0] + "_MT.csv"
         output_path = os.path.join(output_dir, output_filename)
 
         # Save to CSV
         df.to_csv(output_path, index=False)
 
-        # Create a figure and axis
-        fig, ax = plt.subplots()
+        anno_df = df
 
-        # Plot UnSmoothedSpeed as a time series
-        ax.plot(df['Timestamp'], df['Speed Unsmoothed'], label='UnSmoothed Speed', linestyle='solid')
+        # Identify change points for gesture_t
+        anno_df['change_points'] = anno_df['Annotation'].shift(1) != anno_df['Annotation']
 
-        # Plot smoothed speed as a time series
-        ax.plot(df['Timestamp'], df['Speed Smoothed'], label='Smoothed Speed', linestyle='solid')
+        anno_df['time_ms'] = anno_df['Timestamp'] / 1000
+        # Group by change points and calculate 'Begin Time' and 'End Time'
+        grouped_anno_df = df.groupby((df['change_points']).cumsum())
+        gesture_t_anno_df = pd.DataFrame({
+            'Begin Time': grouped_anno_df['time_ms'].first(),
+            'End Time': grouped_anno_df['time_ms'].last(),
+            'Annotation': grouped_anno_df['Annotation'].first(),
+        })
 
-        # Add labels and title
-        ax.set_xlabel('Timestamp')
-        ax.set_ylabel('Speed')
-        ax.set_title('Time Series of Speed and Smoothed Speed')
+        # Add 10ms to 'End Time'
+        gesture_t_anno_df['End Time'] = gesture_t_anno_df['End Time'] + 0.033  # convert 10ms to seconds
+        # Create output filename
+        output_filename = os.path.splitext(filename)[0] + "_Gesture_Phase.csv"
+        output_path = os.path.join(output_dir, output_filename)
 
-        # Add a legend
-        ax.legend()
+        # Save to CSV
+        gesture_t_anno_df.to_csv(output_path, index=False)
 
-        # Display the plot
-        plt.show()
+        Apex_df = df
+
+        # Identify change points for gesture_t
+        Apex_df['change_points'] = Apex_df['Apex'].shift(1) != Apex_df['Apex']
+
+        # Create time interval between the current and next point
+        Apex_df['next_time_s'] = Apex_df['time_ms'].shift(-1)
+        Apex_df['interval_s'] = (Apex_df['next_time_s'] - Apex_df['time_ms']) / 2
+
+        # Calculate begin and end times of the intervals
+        Apex_df['Begin Time'] = Apex_df['time_ms'] - Apex_df['interval_s']
+        Apex_df['End Time'] = Apex_df['time_ms'] + Apex_df['interval_s']
+
+        # Select only the rows where apex is not NaN
+        df_apex = Apex_df[~Apex_df['Apex'].isna()]
+
+        # Create the final dataframe with necessary columns only
+        gesture_t_Apex_df = df_apex[['Begin Time', 'End Time', 'Apex']]
+
+        # Create output filename
+        output_filename = os.path.splitext(filename)[0] + "_Apex.csv"
+        output_path = os.path.join(output_dir, output_filename)
+
+        # Save to CSV
+        gesture_t_Apex_df.to_csv(output_path, index=False)
