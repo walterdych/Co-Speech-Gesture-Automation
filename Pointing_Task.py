@@ -15,8 +15,8 @@ input_dir = "VIDEOS"
 output_dir = "Motion Tracking Annotations"
 
 # Instantiate the variables for the Savitzky-Golay filter
-window_size = 15  # choose an odd number, the larger it is the smoother the result
-polynomial_order = 2  # order of the polynomial used to fit the samples
+window_size = 23  # choose an odd number, the larger it is the smoother the result
+polynomial_order = 5  # order of the polynomial used to fit the samples
 
 # Define the desired frames per second (fps)
 desired_fps = 30
@@ -99,53 +99,74 @@ for filename in os.listdir(input_dir):
 
         speeds = [0 if speed < 0.0003 else speed for speed in speeds]
         speed_smooth = (np.round(abs(savgol_filter(speeds, window_size, polynomial_order)), 8))
-
+        speed_smooth = [0 if speed_smooth < 0.00005 else speed_smooth for speed_smooth in speed_smooth]
         # Create a threshold to mark when the person performs a point
-        threshold = .00025
+        threshold = .0003
         
         # Initialize the variables we need to keep track of the strokes
         inside_stroke = False
         last_stroke_type = None
 
-        # Create the annotations and track the intervals
-        annotations = ['']
+        max_s_length = 60  # Adjust this value to suit your needs
+        R_threshold = 0.0003  # Modify this value based on your data
+
+        # Initialise the necessary variables
+        state = [''] * len(speed_smooth)
         last_stroke_type = None
-        gesture_intervals = []
         start_index = None
+        steady_start = None
+        steady_end = None
+        apexes = [''] * len(speed_smooth)
 
+        # Define max_steady_length
+        max_steady_length = 50  # Set this to your desired value
+
+        # Iterate over the speed_smooth array to generate the annotations
         for i in range(1, len(speed_smooth)):
-            if speed_smooth[i] > threshold and speed_smooth[i-1] <= threshold:
-                if last_stroke_type is None or last_stroke_type == 'R':
-                    last_stroke_type = 'S'
-                else:
-                    last_stroke_type = 'R'
-                start_index = i
-            elif speed_smooth[i] <= threshold and speed_smooth[i-1] > threshold:
-                if last_stroke_type == 'S':
-                    gesture_intervals.append((last_stroke_type, start_index, i))
-                elif last_stroke_type == 'R':
-                    gesture_intervals.append((last_stroke_type, start_index, i))
+            if speed_smooth[i] > threshold and speed_smooth[i-1] <= threshold:  # Upward crossing
+                if last_stroke_type is None or last_stroke_type == 'Steady' or last_stroke_type == 'R':
+                    last_stroke_type = 'Approach'
+                    start_index = i
+                elif last_stroke_type == 'Approach' and i - start_index >= max_s_length:
                     last_stroke_type = None
+            elif speed_smooth[i] <= threshold and speed_smooth[i-1] > threshold:  # Downward crossing
+                if last_stroke_type == 'Approach':
+                    last_stroke_type = 'Steady'
+                    start_index = i
+                    steady_start = i
+                elif last_stroke_type == 'R':
+                    last_stroke_type = None
+                    start_index = None
+            elif last_stroke_type == 'Steady' and speed_smooth[i] > R_threshold and speed_smooth[i-1] <= R_threshold:  # Upward crossing after 'Steady'
+                if steady_end is not None:  # make sure that 'R' only starts after 'Steady'
+                    last_stroke_type = 'R'
+                    start_index = i
 
-            if last_stroke_type is not None:
-                annotations.append(last_stroke_type)
-            else:
-                annotations.append('')
+            if last_stroke_type == 'Steady' and steady_start is None:
+                steady_start = i
+            elif steady_start is not None and last_stroke_type != 'Steady':
+                steady_end = i
+                min_speed_index = np.argmin(speed_smooth[steady_start:i]) + steady_start
+                apexes[min_speed_index] = 'AX'
+                steady_start = None
+                if speed_smooth[i] > R_threshold and speed_smooth[i-1] <= R_threshold:  # Transition from 'Steady' to 'R'
+                    last_stroke_type = 'R'
+                    start_index = i
+            elif last_stroke_type == 'Steady' and i - start_index >= max_steady_length:
+                last_stroke_type = None
+                start_index = None
+                steady_start = None
+            state[i] = last_stroke_type if last_stroke_type is not None else ''
 
-            apexes = [''] * len(speed_smooth)
-            for j in range(len(gesture_intervals)):
-                # Find the Apex in each stroke
-                if gesture_intervals[j][0] == 'S':
-                    start, end = gesture_intervals[j][1], gesture_intervals[j][2]
-                    max_speed_index = np.argmax(speed_smooth[start:end]) + start
-                    apexes[max_speed_index] = 'AX'
-        
+
+# No need to handle 'R' state overriding issue as 'R' will always start after 'Steady'
+
         # Debugging Length Errors
-        print("Length of timestamps:", len(timestamps))
-        print("Length of speed_smooth:", len(speed_smooth))
-        print("Length of speeds_unsmooth:", len(speeds_unsmooth))
-        print("Length of annotations:", len(annotations))
-        print("Length of apexes:", len(apexes)) 
+        #print("Length of timestamps:", len(timestamps))
+        #print("Length of speed_smooth:", len(speed_smooth))
+        #print("Length of speeds_unsmooth:", len(speeds_unsmooth))
+        #print("Length of annotations:", len(annotations))
+        #print("Length of apexes:", len(apexes)) 
 
         # Create pandas DataFrame
         df = pd.DataFrame({
@@ -153,62 +174,71 @@ for filename in os.listdir(input_dir):
             'Keypoints': keypoints,
             'Speed Unsmoothed': speeds_unsmooth,
             'Speed Smoothed': speed_smooth,
-            'Annotation': annotations, 
+            'State': state, 
             'Apex': apexes
         })
 
-        # Create output filename
+        df['Gesture Phase'] = df['State'].apply(lambda x: 'S' if x in ['Steady', 'Approach'] else ('R' if x == 'R' else ''))
+
+        # Create output 
         output_filename = os.path.splitext(filename)[0] + "_MT.csv"
         output_path = os.path.join(output_dir, output_filename)
-
-        # Save to CSV
         df.to_csv(output_path, index=False)
 
-        anno_df = df
 
+        #Create ELAN importable annotations for States
+        state_df = df
         # Identify change points for gesture_t
-        anno_df['change_points'] = anno_df['Annotation'].shift(1) != anno_df['Annotation']
-
-        anno_df['time_ms'] = anno_df['Timestamp'] / 1000
+        state_df['change_points'] = state_df['State'].shift(1) != state_df['State']
+        state_df['time_ms'] = state_df['Timestamp'] / 1000
         # Group by change points and calculate 'Begin Time' and 'End Time'
-        grouped_anno_df = df.groupby((df['change_points']).cumsum())
-        gesture_t_anno_df = pd.DataFrame({
-            'Begin Time': grouped_anno_df['time_ms'].first(),
-            'End Time': grouped_anno_df['time_ms'].last(),
-            'Annotation': grouped_anno_df['Annotation'].first(),
+        grouped_state_df = df.groupby((df['change_points']).cumsum())
+        gesture_t_state_df = pd.DataFrame({
+            'Begin Time': grouped_state_df['time_ms'].first(),
+            'End Time': grouped_state_df['time_ms'].last(),
+            'State': grouped_state_df['State'].first(),
         })
-
         # Add 10ms to 'End Time'
-        gesture_t_anno_df['End Time'] = gesture_t_anno_df['End Time'] + 0.033  # convert 10ms to seconds
-        # Create output filename
-        output_filename = os.path.splitext(filename)[0] + "_Gesture_Phase.csv"
+        gesture_t_state_df['End Time'] = gesture_t_state_df['End Time'] + 0.033  # convert 10ms to seconds
+        # Create output
+        output_filename = os.path.splitext(filename)[0] + "_Gesture_State.csv"
         output_path = os.path.join(output_dir, output_filename)
+        gesture_t_state_df.to_csv(output_path, index=False)
 
-        # Save to CSV
-        gesture_t_anno_df.to_csv(output_path, index=False)
-
+        #Create ELAN importable annotations for Apex
         Apex_df = df
-
         # Identify change points for gesture_t
         Apex_df['change_points'] = Apex_df['Apex'].shift(1) != Apex_df['Apex']
-
         # Create time interval between the current and next point
         Apex_df['next_time_s'] = Apex_df['time_ms'].shift(-1)
         Apex_df['interval_s'] = (Apex_df['next_time_s'] - Apex_df['time_ms']) / 2
-
         # Calculate begin and end times of the intervals
         Apex_df['Begin Time'] = Apex_df['time_ms'] - Apex_df['interval_s']
         Apex_df['End Time'] = Apex_df['time_ms'] + Apex_df['interval_s']
-
         # Select only the rows where apex is not NaN
         df_apex = Apex_df[~Apex_df['Apex'].isna()]
-
         # Create the final dataframe with necessary columns only
         gesture_t_Apex_df = df_apex[['Begin Time', 'End Time', 'Apex']]
-
-        # Create output filename
+        # Create output
         output_filename = os.path.splitext(filename)[0] + "_Apex.csv"
         output_path = os.path.join(output_dir, output_filename)
-
-        # Save to CSV
         gesture_t_Apex_df.to_csv(output_path, index=False)
+
+        #Create ELAN importable annotations for States
+        gphase_df = df
+        # Identify change points for gesture_t
+        gphase_df['change_points'] = gphase_df['Gesture Phase'].shift(1) != gphase_df['Gesture Phase']
+        gphase_df['time_ms'] = gphase_df['Timestamp'] / 1000
+        # Group by change points and calculate 'Begin Time' and 'End Time'
+        grouped_gphase_df = df.groupby((df['change_points']).cumsum())
+        gesture_t_gphase_df = pd.DataFrame({
+            'Begin Time': grouped_gphase_df['time_ms'].first(),
+            'End Time': grouped_gphase_df['time_ms'].last(),
+            'Gesture Phase': grouped_gphase_df['Gesture Phase'].first(),
+        })
+        # Add 10ms to 'End Time'
+        gesture_t_gphase_df['End Time'] = gesture_t_gphase_df['End Time'] + 0.033  # convert 10ms to seconds
+        # Create output
+        output_filename = os.path.splitext(filename)[0] + "_Gesture_Phase.csv"
+        output_path = os.path.join(output_dir, output_filename)
+        gesture_t_gphase_df.to_csv(output_path, index=False)

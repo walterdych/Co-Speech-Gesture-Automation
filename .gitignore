@@ -4,3 +4,6 @@
 MP_TEST.py
 Test.py
 *.WAV
+*.eaf
+*.pfsx
+*.xml
