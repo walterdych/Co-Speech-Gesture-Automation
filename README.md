@@ -1,6 +1,9 @@
 # Steps for Running Automated Gesture Annotation
 
-1. Download scripts from [Github](https://github.com/walterdych/Co-Speech-Gesture-Automation).
+1. Clone Repository
+    '''git
+        git clone https://github.com/walterdych/Co-Speech-Gesture-Automation
+    '''
 
 2. Place videos in `VIDEOS` folder.
 
