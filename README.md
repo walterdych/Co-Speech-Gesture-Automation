@@ -3,7 +3,6 @@
 1. Clone Repository
 
     ```sh
-
         git clone https://github.com/walterdych/Co-Speech-Gesture-Automation
 
 2. Place videos in `VIDEOS` folder.
