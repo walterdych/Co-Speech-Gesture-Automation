@@ -5,9 +5,18 @@
     ```sh
         git clone https://github.com/walterdych/Co-Speech-Gesture-Automation
 
-2. Place videos in `VIDEOS` folder.
+2. Install Packages
 
-3. Replace video extension in script `Pointing_Task.py` (`.mp4` or `.MOV`). The Python script will iterate over all .mp4 files in the input directory:
+    ```sh
+        pip install opencv-python
+        pip install mediapipe
+        pip install pandas
+        pip install scipy
+        pip install -U matplotlib
+
+3. Place videos in `VIDEOS` folder.
+
+4. Replace video extension in script `Pointing_Task.py` (`.mp4` or `.MOV`). The Python script will iterate over all .mp4 files in the input directory:
 
     ```python
     # Iterate over all .mp4 files in the input directory
@@ -16,9 +25,9 @@
             video_path = os.path.join(input_dir, filename)
     ```
 
-4. Once the previous three steps are finished, you should be able to run the script and it will iterate through all of the videos in the `VIDEOS` directory.
+5. Once the previous three steps are finished, you should be able to run the script and it will iterate through all of the videos in the `VIDEOS` directory.
 
-5. A visualization will pop up to show that the video processing is running as shown below.
+6. A visualization will pop up to show that the video processing is running as shown below.
     ![Motion Tracking Running](https://i.imgur.com/WNKhxoX.jpg)
 
     Note: You can comment out this code segment to not have this visualization, this is mainly for debugging purposes:
@@ -34,7 +43,7 @@
             break
     ```
 
-6. Once the video is fully processed, a chart will be created to show the smoothed and unsmoothed speed vectors, this can also be commented out as it will pause the loop. See example below.
+7. Once the video is fully processed, a chart will be created to show the smoothed and unsmoothed speed vectors, this can also be commented out as it will pause the loop. See example below.
     ![Speed Vector Graphs](https://i.imgur.com/hmth8H3.jpg)
 
     ```python
