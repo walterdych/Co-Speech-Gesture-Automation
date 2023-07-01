@@ -25,17 +25,14 @@ polynomial_order = 3  # order of the polynomial used to fit the samples
 desired_fps = 30
 
 num_cores = 4  # Change this to the number of cores you want to use
+max_s_length = 60  # Adjust this value to suit your needs
+max_steady_length = 50  # Set this to your desired value
 
 pose_landmark = mp_pose.PoseLandmark.RIGHT_INDEX # change RIGHT_WRIST to corresponding landmark
-
-############# List of landmarks:
+############# List of landmarks #############
     #NOSE
-    #LEFT_EYE_INNER
     #LEFT_EYE
-    #LEFT_EYE_OUTER
-    #RIGHT_EYE_INNER
     #RIGHT_EYE
-    #RIGHT_EYE_OUTER
     #LEFT_EAR
     #RIGHT_EAR
     #MOUTH_LEFT
@@ -52,19 +49,10 @@ pose_landmark = mp_pose.PoseLandmark.RIGHT_INDEX # change RIGHT_WRIST to corresp
     #RIGHT_INDEX
     #LEFT_THUMB
     #RIGHT_THUMB
-    #LEFT_HIP
-    #RIGHT_HIP
-    #LEFT_KNEE
-    #RIGHT_KNEE
-    #LEFT_ANKLE
-    #RIGHT_ANKLE
-    #LEFT_HEEL
-    #RIGHT_HEEL
-    #LEFT_FOOT_INDEX
-    #RIGHT_FOOT_INDEX
 
 # Iterate over all .mp4 files in the input directory
 def process_file(filename):
+    print(f"Processing {filename}...")
     if filename.endswith((".mp4", ".MOV")):
         video_path = os.path.join(input_dir, filename)
 
@@ -143,14 +131,11 @@ def process_file(filename):
         speed_smooth = (np.round(abs(savgol_filter(speeds, window_size, polynomial_order)), 8))
         speed_smooth = [0 if speed_smooth < 0.00005 else speed_smooth for speed_smooth in speed_smooth]
         # Create a threshold to mark when the person performs a point
-        threshold = .0003
+        threshold = np.percentile(speed_smooth, 70)
         
         # Initialize the variables we need to keep track of the strokes
         inside_stroke = False
         last_stroke_type = None
-
-        max_s_length = 60  # Adjust this value to suit your needs
-        R_threshold = 0.0003  # Modify this value based on your data
 
         # Initialise the necessary variables
         state = [''] * len(speed_smooth)
@@ -159,9 +144,6 @@ def process_file(filename):
         steady_start = None
         steady_end = None
         apexes = [''] * len(speed_smooth)
-
-        # Define max_steady_length
-        max_steady_length = 50  # Set this to your desired value
 
         # Iterate over the speed_smooth array to generate the annotations
         for i in range(1, len(speed_smooth)):
@@ -179,7 +161,7 @@ def process_file(filename):
                 elif last_stroke_type == 'R':
                     last_stroke_type = None
                     start_index = None
-            elif last_stroke_type == 'Steady' and speed_smooth[i] > R_threshold and speed_smooth[i-1] <= R_threshold:  # Upward crossing after 'Steady'
+            elif last_stroke_type == 'Steady' and speed_smooth[i] > threshold and speed_smooth[i-1] <= threshold:  # Upward crossing after 'Steady'
                 if steady_end is not None:  # make sure that 'R' only starts after 'Steady'
                     last_stroke_type = 'R'
                     start_index = i
@@ -191,7 +173,7 @@ def process_file(filename):
                 min_speed_index = np.argmin(speed_smooth[steady_start:i]) + steady_start
                 apexes[min_speed_index] = 'AX'
                 steady_start = None
-                if speed_smooth[i] > R_threshold and speed_smooth[i-1] <= R_threshold:  # Transition from 'Steady' to 'R'
+                if speed_smooth[i] > threshold and speed_smooth[i-1] <= threshold:  # Transition from 'Steady' to 'R'
                     last_stroke_type = 'R'
                     start_index = i
             elif last_stroke_type == 'Steady' and i - start_index >= max_steady_length:
