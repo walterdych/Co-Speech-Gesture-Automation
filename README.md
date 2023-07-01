@@ -8,11 +8,7 @@
 2. Install Packages
 
     ```sh
-        pip install opencv-python
-        pip install mediapipe
-        pip install pandas
-        pip install scipy
-        pip install -U matplotlib
+        pip install opencv-python pandas numpy mediapipe matplotlib scipy
 
 3. Place videos in `VIDEOS` folder.
 

@@ -1,10 +1,13 @@
 import cv2
-import mediapipe as mp
-import numpy as np
 import pandas as pd
 import os
-from scipy.signal import savgol_filter
+import numpy as np
+import mediapipe as mp
 import matplotlib.pyplot as plt
+from mediapipe.tasks import python
+from mediapipe.tasks.python import vision
+from scipy.signal import savgol_filter
+import multiprocessing
 
 # Instantiate mediapipe
 mp_drawing = mp.solutions.drawing_utils
@@ -16,14 +19,53 @@ output_dir = "Motion Tracking Annotations"
 
 # Instantiate the variables for the Savitzky-Golay filter
 window_size = 23  # choose an odd number, the larger it is the smoother the result
-polynomial_order = 5  # order of the polynomial used to fit the samples
+polynomial_order = 3  # order of the polynomial used to fit the samples
 
 # Define the desired frames per second (fps)
 desired_fps = 30
 
+num_cores = 4  # Change this to the number of cores you want to use
+
+pose_landmark = mp_pose.PoseLandmark.RIGHT_INDEX # change RIGHT_WRIST to corresponding landmark
+
+############# List of landmarks:
+    #NOSE
+    #LEFT_EYE_INNER
+    #LEFT_EYE
+    #LEFT_EYE_OUTER
+    #RIGHT_EYE_INNER
+    #RIGHT_EYE
+    #RIGHT_EYE_OUTER
+    #LEFT_EAR
+    #RIGHT_EAR
+    #MOUTH_LEFT
+    #MOUTH_RIGHT
+    #LEFT_SHOULDER
+    #RIGHT_SHOULDER
+    #LEFT_ELBOW
+    #RIGHT_ELBOW
+    #LEFT_WRIST
+    #RIGHT_WRIST
+    #LEFT_PINKY
+    #RIGHT_PINKY
+    #LEFT_INDEX
+    #RIGHT_INDEX
+    #LEFT_THUMB
+    #RIGHT_THUMB
+    #LEFT_HIP
+    #RIGHT_HIP
+    #LEFT_KNEE
+    #RIGHT_KNEE
+    #LEFT_ANKLE
+    #RIGHT_ANKLE
+    #LEFT_HEEL
+    #RIGHT_HEEL
+    #LEFT_FOOT_INDEX
+    #RIGHT_FOOT_INDEX
+
 # Iterate over all .mp4 files in the input directory
-for filename in os.listdir(input_dir):
-    if filename.endswith(".mp4"):
+def process_file(filename):
+    if filename.endswith((".mp4", ".MOV")):
         video_path = os.path.join(input_dir, filename)
 
         # Initialize variables
@@ -45,7 +87,7 @@ for filename in os.listdir(input_dir):
 
         frame_counter = 0  # initialize frame counter
 
-        with mp_pose.Pose(min_detection_confidence=.6, min_tracking_confidence=.80) as pose:
+        with mp_pose.Pose(min_detection_confidence=.6, min_tracking_confidence=.7, model_complexity=2) as pose:
             while cap.isOpened():
                 success, image = cap.read()
                 if not success:
@@ -57,22 +99,22 @@ for filename in os.listdir(input_dir):
                 # Process every nth frame based on frame interval
                 if frame_counter % frame_interval == 0:
 
-                    # Convert the image from BGR to RGB
-                    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+                    # Convert the image from RGB to BGR
+                    image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 
                     # Process the image and get the pose landmarks
                     results = pose.process(image)
 
                     if results.pose_landmarks:
                         # Extract the coordinates of the right wrist and scale them
-                        x = round((results.pose_landmarks.landmark[mp_pose.PoseLandmark.RIGHT_WRIST].x), 4)
-                        y = round((results.pose_landmarks.landmark[mp_pose.PoseLandmark.RIGHT_WRIST].y), 4)
+                        x = round((results.pose_landmarks.landmark[pose_landmark].x), 4)
+                        y = round((results.pose_landmarks.landmark[pose_landmark].y), 4)
                         keypoints.append((x, y))
 
                         # Calculate the timestamp in milliseconds and rounded
                         timestamp = round(frame_counter * (1000 / desired_fps))
                         timestamps.append(timestamp)
-
+                    
                         # Draw pose landmarks on the image
                         mp_drawing.draw_landmarks(image, results.pose_landmarks, mp_pose.POSE_CONNECTIONS)
 
@@ -81,7 +123,7 @@ for filename in os.listdir(input_dir):
 
                     # Resize the image back to the original resolution
                     image = cv2.resize(image, (width, height))
-
+                    
                     # Display the resulting image
                     cv2.imshow('MediaPipe Pose', image)
                     if cv2.waitKey(5) & 0xFF == 27:
@@ -157,17 +199,7 @@ for filename in os.listdir(input_dir):
                 start_index = None
                 steady_start = None
             state[i] = last_stroke_type if last_stroke_type is not None else ''
-
-
-# No need to handle 'R' state overriding issue as 'R' will always start after 'Steady'
-
-        # Debugging Length Errors
-        #print("Length of timestamps:", len(timestamps))
-        #print("Length of speed_smooth:", len(speed_smooth))
-        #print("Length of speeds_unsmooth:", len(speeds_unsmooth))
-        #print("Length of annotations:", len(annotations))
-        #print("Length of apexes:", len(apexes)) 
-
+    
         # Create pandas DataFrame
         df = pd.DataFrame({
             'Timestamp': timestamps,
@@ -184,7 +216,6 @@ for filename in os.listdir(input_dir):
         output_filename = os.path.splitext(filename)[0] + "_MT.csv"
         output_path = os.path.join(output_dir, output_filename)
         df.to_csv(output_path, index=False)
-
 
         #Create ELAN importable annotations for States
         state_df = df
@@ -242,3 +273,10 @@ for filename in os.listdir(input_dir):
         output_filename = os.path.splitext(filename)[0] + "_Gesture_Phase.csv"
         output_path = os.path.join(output_dir, output_filename)
         gesture_t_gphase_df.to_csv(output_path, index=False)
+    
+    print(f"{filename} is done processing.")
+
+if __name__ == '__main__':
+    with multiprocessing.Pool(num_cores) as pool:
+        filenames = [filename for filename in os.listdir(input_dir) if filename.endswith((".mp4", ".MOV"))]
+        pool.map(process_file, filenames)
