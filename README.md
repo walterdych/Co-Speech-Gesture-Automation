@@ -4,11 +4,13 @@
 
     ```sh
         git clone https://github.com/walterdych/Co-Speech-Gesture-Automation
+    ```
 
 2. Install Packages
 
     ```sh
         pip install opencv-python pandas numpy mediapipe matplotlib scipy
+    ```
 
 3. Place videos in `VIDEOS` folder.
 
