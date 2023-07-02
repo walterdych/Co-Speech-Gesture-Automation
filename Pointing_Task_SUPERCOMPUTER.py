@@ -8,6 +8,7 @@ from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 from scipy.signal import savgol_filter
 import multiprocessing
+import cProfile
 
 # Instantiate mediapipe
 mp_drawing = mp.solutions.drawing_utils
