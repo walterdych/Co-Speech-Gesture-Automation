@@ -3,20 +3,11 @@ import pandas as pd
 import os
 import numpy as np
 import mediapipe as mp
-import matplotlib.pyplot as plt
-from mediapipe.tasks import python
-from mediapipe.tasks.python import vision
 from scipy.signal import savgol_filter
-import multiprocessing
-import cProfile
 
 # Instantiate mediapipe
 mp_drawing = mp.solutions.drawing_utils
 mp_pose = mp.solutions.pose
-
-# Specify the directories
-input_dir = "VIDEOS"
-output_dir = "Motion Tracking Annotations"
 
 # Instantiate the variables for the Savitzky-Golay filter
 window_size = 23  # choose an odd number, the larger it is the smoother the result
@@ -28,6 +19,10 @@ desired_fps = 30
 num_cores = 4  # Change this to the number of cores you want to use
 max_s_length = 60  # Adjust this value to suit your needs
 max_steady_length = 50  # Set this to your desired value
+
+# Use environment variables to specify directories
+input_dir = os.environ['INPUT_DIR']
+output_dir = os.environ['OUTPUT_DIR']
 
 pose_landmark = mp_pose.PoseLandmark.RIGHT_INDEX # change RIGHT_WRIST to corresponding landmark
 ############# List of landmarks #############
@@ -51,7 +46,6 @@ pose_landmark = mp_pose.PoseLandmark.RIGHT_INDEX # change RIGHT_WRIST to corresp
     #LEFT_THUMB
     #RIGHT_THUMB
 
-# Iterate over all .mp4 files in the input directory
 def process_file(filename):
     print(f"Processing {filename}...")
     if filename.endswith((".mp4", ".MOV")):
@@ -260,6 +254,5 @@ def process_file(filename):
     print(f"{filename} is done processing.")
 
 if __name__ == '__main__':
-    with multiprocessing.Pool(num_cores) as pool:
-        filenames = [filename for filename in os.listdir(input_dir) if filename.endswith((".mp4", ".MOV"))]
-        pool.map(process_file, filenames)
+    import sys
+    process_file(sys.argv[1])
