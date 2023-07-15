@@ -8,3 +8,6 @@ Test.py
 *.pfsx
 *.xml
 *.pkl
+/Test_Script
+/Head_Gestures
+/.ipynb_checkpoints

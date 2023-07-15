@@ -3,12 +3,8 @@ import pandas as pd
 import os
 import numpy as np
 import mediapipe as mp
-import matplotlib.pyplot as plt
-from mediapipe.tasks import python
-from mediapipe.tasks.python import vision
 from scipy.signal import savgol_filter
-import multiprocessing
-import cProfile
+import  multiprocessing
 
 # Instantiate mediapipe
 mp_drawing = mp.solutions.drawing_utils
@@ -16,20 +12,20 @@ mp_pose = mp.solutions.pose
 
 # Specify the directories
 input_dir = "VIDEOS"
-output_dir = "Motion Tracking Annotations"
+output_dir = "Motion_Tracking_Annotations"
 
 # Instantiate the variables for the Savitzky-Golay filter
-window_size = 23  # choose an odd number, the larger it is the smoother the result
+window_size = 27  # choose an odd number, the larger it is the smoother the result, though, more data loss
 polynomial_order = 3  # order of the polynomial used to fit the samples
 
 # Define the desired frames per second (fps)
 desired_fps = 30
 
-num_cores = 4  # Change this to the number of cores you want to use
+num_cores = 8  # Change this to the number of cores you want to use
 max_s_length = 60  # Adjust this value to suit your needs
 max_steady_length = 50  # Set this to your desired value
 
-pose_landmark = mp_pose.PoseLandmark.RIGHT_INDEX # change RIGHT_WRIST to corresponding landmark
+pose_landmark = mp_pose.PoseLandmark.RIGHT_WRIST # change RIGHT_WRIST to corresponding landmark
 ############# List of landmarks #############
     #NOSE
     #LEFT_EYE
@@ -51,6 +47,11 @@ pose_landmark = mp_pose.PoseLandmark.RIGHT_INDEX # change RIGHT_WRIST to corresp
     #LEFT_THUMB
     #RIGHT_THUMB
 
+speeds = [0]  # add initial speed as 0 for the first frame
+speeds_unsmooth = [0]  # add initial unsmoothed speed as 0 for the first frame
+annotations = []
+apexes = []  # separate list for apex annotations
+
 # Iterate over all .mp4 files in the input directory
 def process_file(filename):
     print(f"Processing {filename}...")
@@ -60,10 +61,6 @@ def process_file(filename):
         # Initialize variables
         timestamps = []
         keypoints = []
-        speeds = [0]  # add initial speed as 0 for the first frame
-        speeds_unsmooth = [0]  # add initial unsmoothed speed as 0 for the first frame
-        annotations = []
-        apexes = []  # separate list for apex annotations
 
         # Load video
         cap = cv2.VideoCapture(video_path)
@@ -77,6 +74,9 @@ def process_file(filename):
         frame_counter = 0  # initialize frame counter
 
         with mp_pose.Pose(min_detection_confidence=.6, min_tracking_confidence=.7, model_complexity=2) as pose:
+        #"min_detection_confidence" is set to ensure the program maps to skeletons correctly, without forcing it to not track, .6 seems to find the right balance
+        #"min_tracking_confidence" is set to ensure the program TRACKS movements correctly
+        #"model_complexity" sets the pretrained model to use: "0" = Lite_Model, "1" = Normal_Model, "2" = Heavy_Model
             while cap.isOpened():
                 success, image = cap.read()
                 if not success:
@@ -135,7 +135,6 @@ def process_file(filename):
         threshold = np.percentile(speed_smooth, 70)
         
         # Initialize the variables we need to keep track of the strokes
-        inside_stroke = False
         last_stroke_type = None
 
         # Initialise the necessary variables
