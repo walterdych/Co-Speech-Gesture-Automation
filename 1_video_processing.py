@@ -42,7 +42,7 @@ def initialize_video_capture(input_file): # Initialize video capture and pose.
 def process_image(image): # Process an image to detect the pose landmarks.
     mp_drawing = mp.solutions.drawing_utils
     mp_pose = mp.solutions.pose
-    pose = mp_pose.Pose()
+    pose = mp_pose.Pose(min_detection_confidence=.6, min_tracking_confidence=.7, model_complexity=1)
 
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     results = pose.process(image)
