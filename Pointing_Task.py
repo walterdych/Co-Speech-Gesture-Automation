@@ -8,8 +8,8 @@ import mediapipe as mp
 from scipy.signal import savgol_filter
 
 # Global variables
-INPUT_DIR = "VIDEOS"
-OUTPUT_DIR = "Motion_Tracking_Annotations"
+INPUT_DIR = "VIDEO_FILES"
+OUTPUT_DIR = "ANNOTATIONS"
 DESIRED_FPS = 30
 WINDOW_SIZE = 27
 POLYNOMIAL_ORDER = 3
@@ -17,6 +17,7 @@ NUM_CORES = 8
 MAX_S_LENGTH = 60
 MAX_STEADY_LENGTH = 50
 POSE_LANDMARK = mp.solutions.pose.PoseLandmark.RIGHT_WRIST
+MODEL = 1
 
 # Instantiate mediapipe
 mp_drawing = mp.solutions.drawing_utils
@@ -35,7 +36,7 @@ def process_video(video_path, frame_interval, landmark):
 
     frame_counter = 0  # initialize frame counter
 
-    with mp_pose.Pose(min_detection_confidence=.6, min_tracking_confidence=.7, model_complexity=2) as pose:
+    with mp_pose.Pose(min_detection_confidence=.6, min_tracking_confidence=.7, model_complexity=MODEL) as pose:
         while cap.isOpened():
             success, image = cap.read()
             if not success:
