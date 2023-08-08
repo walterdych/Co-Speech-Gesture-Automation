@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-AUDIO_PATH = 'SOUND\\Bertrand&Benedicte_INPUT2_Part2.WAV'  # replace with your audio file path
+AUDIO_PATH = 'AUDIO_FILES/YOUR_FILE.WAVs'  # replace with your audio file path
 
 def extract_pitch_curve(audio_path): # Extract pitch curve from an audio file.
     sound = parselmouth.Sound(audio_path)
@@ -24,7 +24,7 @@ def plot_pitch_curve(time_values, pitch_values): # Plot the pitch curve.
     plt.plot(time_values, pitch_values, 'o', markersize=5, color='w')
     plt.plot(time_values, pitch_values, 'r')
     plt.grid(True)
-    plt.xlabel("Time [s]")
+    plt.xlabel("Time [msec]")
     plt.ylabel("Pitch [Hz]")
     plt.show()
 
