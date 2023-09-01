@@ -4,7 +4,7 @@ import pickle
 
 # Replace these paths with the paths to your input audio file and output pickle file
 audio_path = "SOUND_FILES/5012_I.WAV"
-pickle_path = "SOUND_FILES/5012.pkl"
+pickle_path = "SOUND_FILES/5012_I_pitch.pkl"
 
 # Function to extract and save pitch curve
 def extract_and_save_pitch_curve(audio_path, pickle_path):

@@ -6,7 +6,7 @@ import plotly.graph_objects as go
 
 MAX_S_LENGTH = 60
 MAX_STEADY_LENGTH = 50
-THRESHOLD = 0.0075
+THRESHOLD = 0.009
 INPUT_DIR = "SPEED_FILES"
 OUTPUT_DIR = "ANNOTATIONS"
 COLORS = {'Approach': 'rgba(231,107,243,0.2)', 'Steady': 'rgba(107,174,214,0.2)', 'R': 'rgba(127,127,127,0.2)', '': 'rgba(255,255,255,0.2)'}
