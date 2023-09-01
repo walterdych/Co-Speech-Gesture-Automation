@@ -23,9 +23,6 @@ mp_drawing = mp.solutions.drawing_utils
 mp_pose = mp.solutions.pose
 
 def process_video(video_path, frame_interval, landmark):
-    """
-    Processes the video and extracts relevant keypoints and timestamps
-    """
     # Initialize variables
     timestamps = []
     keypoints = []
@@ -63,9 +60,6 @@ def process_video(video_path, frame_interval, landmark):
     return timestamps, keypoints
 
 def process_frame(image, pose, landmark):
-    """
-    Processes an image frame and returns the processed frame and landmark coordinates
-    """
     # Get the original resolution
     height, width, _ = image.shape
 
@@ -91,9 +85,6 @@ def process_frame(image, pose, landmark):
     return image, None
 
 def calculate_speed(timestamps, keypoints):
-    """
-    Calculates the speed of movement between keypoints and smooths the speed
-    """
     speeds = [0]  # add initial speed as 0 for the first frame
     speeds_unsmooth = [0]  # add initial unsmoothed speed as 0 for the first frame
 
@@ -110,9 +101,6 @@ def calculate_speed(timestamps, keypoints):
     return speeds, speeds_unsmooth, speed_smooth
 
 def generate_annotations(speed_smooth):
-    """
-    Generates the annotations based on the smoothed speed
-    """
     threshold = np.percentile(speed_smooth, 70)
 
     # Initialize the variables we need to keep track of the strokes
@@ -163,9 +151,6 @@ def generate_annotations(speed_smooth):
     return state, apexes
 
 def create_dataframe(timestamps, keypoints, speeds_unsmooth, speed_smooth, state, apexes):
-    """
-    Creates a pandas dataframe with the relevant data
-    """
     # Create pandas DataFrame
     df = pd.DataFrame({
         'Timestamp': timestamps,
@@ -180,17 +165,11 @@ def create_dataframe(timestamps, keypoints, speeds_unsmooth, speed_smooth, state
     return df
 
 def save_dataframe(df, filename, output_dir=OUTPUT_DIR):
-    """
-    Saves the dataframe as a CSV file
-    """
     output_filename = os.path.splitext(filename)[0] + "_MT.csv"
     output_path = os.path.join(output_dir, output_filename)
     df.to_csv(output_path, index=False)
 
 def create_annotation_files(df, filename):
-    """
-    Creates ELAN importable annotation files
-    """
     # Create State Annotations
     state_df = create_state_annotations(df)
     save_dataframe(state_df, os.path.splitext(filename)[0] + "_Gesture_State.csv")
@@ -204,9 +183,6 @@ def create_annotation_files(df, filename):
     save_dataframe(gphase_df, os.path.splitext(filename)[0] + "_Gesture_Phase.csv")
 
 def create_state_annotations(df):
-    """
-    Creates state annotations for ELAN import
-    """
     # Identify change points for gesture_t
     df['change_points'] = df['State'].shift(1) != df['State']
     df['time_ms'] = df['Timestamp'] / 1000
@@ -225,9 +201,6 @@ def create_state_annotations(df):
     return state_df
 
 def create_apex_annotations(df):
-    """
-    Creates apex annotations for ELAN import
-    """
     # Identify change points for gesture_t
     df['change_points'] = df['Apex'].shift(1) != df['Apex']
 
@@ -248,9 +221,6 @@ def create_apex_annotations(df):
     return apex_df
 
 def create_gesture_phase_annotations(df):
-    """
-    Creates gesture phase annotations for ELAN import
-    """
     # Identify change points for gesture_t
     df['change_points'] = df['Gesture Phase'].shift(1) != df['Gesture Phase']
     df['time_ms'] = df['Timestamp'] / 1000
@@ -269,9 +239,6 @@ def create_gesture_phase_annotations(df):
     return gphase_df
 
 def process_file(filename):
-    """
-    Processes the given file and generates output data files
-    """
     print(f"Processing {filename}...")
     if filename.endswith((".mp4", ".MOV")):
         video_path = os.path.join(INPUT_DIR, filename)
@@ -302,9 +269,6 @@ def process_file(filename):
     print(f"{filename} is done processing.")
 
 def main():
-    """
-    The main function that processes all videos
-    """
     with multiprocessing.Pool(NUM_CORES) as pool:
         filenames = [filename for filename in os.listdir(INPUT_DIR) if filename.endswith((".mp4", ".MOV"))]
         pool.map(process_file, filenames)
