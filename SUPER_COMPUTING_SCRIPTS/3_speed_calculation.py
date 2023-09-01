@@ -10,8 +10,8 @@ WINDOW_SIZE = 11
 POLYNOMIAL_ORDER = 3  
 
 # Constants for file names
-INPUT_DIR = "Motion_Tracking_Annotations"
-OUTPUT_DIR = "Speed_Files"
+INPUT_DIR = "MOTION_TRACKING_FILES"
+OUTPUT_DIR = "SPEED_FILES"
 FILE_SUFFIX = "_processed.pkl"
 SPEED_FILE_SUFFIX = "_speed.pkl"
 
@@ -19,10 +19,11 @@ def calculate_speed(time_series): # Calculate speed between consecutive keypoint
     speeds = [0]  # initial speed is 0
 
     for i in range(1, len(time_series)):
-        timestamp_prev, keypoint_prev = time_series[i-1]
-        timestamp_curr, keypoint_curr = time_series[i]
+        timestamp_prev, x_coord_prev, y_coord_prev, z_coord_prev = time_series[i-1]
+        timestamp_curr, x_coord_curr, y_coord_curr, z_coord_curr = time_series[i]  # Define current coordinates
+        distance = euclidean((x_coord_prev, y_coord_prev), (x_coord_curr, y_coord_curr))
 
-        distance = euclidean((keypoint_prev.x, keypoint_prev.y), (keypoint_curr.x, keypoint_curr.y))
+        distance = euclidean((x_coord_prev, y_coord_prev), (x_coord_curr, y_coord_curr))
         time_diff = timestamp_curr - timestamp_prev
         speed = distance / time_diff
         speeds.append(speed)
@@ -52,10 +53,11 @@ def save_data(data, output_file): # Save data to a pickle file.
     with open(output_file, 'wb') as f:
         pickle.dump(data, f)
 
-def process_file(input_file): # Process a single file: load data, calculate speeds, smooth speeds, save data, and generate a plot.
+def process_file(input_file):
     time_series = load_data(input_file)
-    timestamps, keypoints = zip(*time_series)
+    timestamps, x_coords, y_coords, z_coords = zip(*time_series)
 
+    keypoints = list(zip(x_coords, y_coords, z_coords))
     speeds = calculate_speed(time_series)
     smoothed_speeds = smooth_speed(speeds)
 
