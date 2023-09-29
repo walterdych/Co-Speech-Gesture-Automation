@@ -124,7 +124,7 @@ def create_plots(df): # Create a plotly plot based on the dataframe.
     fig.show()
 
 def save_to_csv(df, filename): # Save dataframe to a csv file.
-    output_filename = os.path.splitext(filename)[0] + "_MT.csv"
+    output_filename = os.path.splitext(filename)[0] + "_processed_data.csv"
     output_path = os.path.join(OUTPUT_DIR, output_filename)
     df.to_csv(output_path, index=False)
 

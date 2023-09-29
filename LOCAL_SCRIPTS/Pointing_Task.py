@@ -16,7 +16,7 @@ NUM_CORES = 8
 MAX_S_LENGTH = 60
 MAX_STEADY_LENGTH = 50
 POSE_LANDMARK = mp.solutions.pose.PoseLandmark.RIGHT_WRIST
-MODEL = 1
+MODEL = 2
 
 # Instantiate mediapipe
 mp_drawing = mp.solutions.drawing_utils
@@ -56,7 +56,7 @@ def process_video(video_path, frame_interval, landmark):
 
             frame_counter += 1  # increment frame counter
 
-    cv2.destroyAllWindows()
+        
     return timestamps, keypoints
 
 def process_frame(image, pose, landmark):
