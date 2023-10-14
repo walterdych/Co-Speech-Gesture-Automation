@@ -6,8 +6,10 @@ This repository contains scripts for automating co-speech gesture analysis. The 
 - **LOCAL_SCRIPTS**: (Ignore this folder)
 - **MOTION_TRACKING_FILES**: Output of script 1
 - **SPEED_FILES**: Output of script 2
-- **ANNOTATIONS**: Outputs of scripts 3 and 4
+- **ANNOTATIONS**: Outputs of scripts 3a and 4
+- **APEX_FILES**: Outputs of script 3b
 - **VIDEO_FILES**: Place your videos here for processing
+- **TEST_VIDEOS**: Location of handpicked videos for testing
 
 ## Installation
 
@@ -35,9 +37,13 @@ This notebook focuses on video processing using computational techniques. It emp
 
 This notebook aims to calculate the speed of **selected keypoints** and **upsample** the data. It begins by loading the required data and then guides the user through the process of selecting the appropriate keypoints for analysis. It uses `MediaPipe` for keypoint definitions.
 
-### 3. Gesture Annotation Notebook
+### 3a. Gesture Annotation Notebook
 
 This notebook is tailored for generating annotations for gestures. Libraries such as `pandas`, `numpy`, `matplotlib`, and `scikit-learn` are used. The notebook provides a function called **`generate_annotations`** that takes a DataFrame containing **time** and **speed data** to produce ***stroke***, ***phase***, and ***apex*** annotations for gestures.
+
+### 3b. Apex Only Notebook
+
+This notebook is tailored for generating only the ***APEX*** annotations for videos where you already have annotated the ***Gesture Phase***.
 
 ### 4. ELAN Exportable Annotation Notebook
 
