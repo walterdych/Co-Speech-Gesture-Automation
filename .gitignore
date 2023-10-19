@@ -1,13 +1,8 @@
 *.mp4
 *.csv
-MP_TEST.py
-Test.py
 *.WAV
 *.eaf
 *.pfsx
 *.xml
 *.pkl
-/Test_Script
-/Head_Gestures
-/.ipynb_checkpoints
-/TEST_SCRIPTS
+/TEST_NOTEBOOKS
