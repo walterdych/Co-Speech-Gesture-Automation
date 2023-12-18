@@ -1,0 +1,10 @@
+opencv-python-headless
+matplotlib
+mediapipe
+numpy
+pandas
+plotly
+scipy
+scikit-learn
+seaborn
+statsmodels
