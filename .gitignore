@@ -1,13 +1,13 @@
-*.mp4
-*.csv
-*.WAV
-*.eaf
-*.pfsx
+!*/: Annotations/EST_VIDEO_gestures_found_elan_apexes.csv
+!*/: **/TEST_VIDEO*
+
+
+*.log
+*.txt
+*.json
 *.xml
-*.pkl
-*.MOV
-/TEST_NOTEBOOKS
-/REFERENCE_NOTEBOOKS
-/OLD_SCRIPTS
-/SUPER_COMPUTING_SCRIPTS
-/LOCAL_SCRIPTS
+*.yaml
+*.yml
+*.html
+*.htm
+*.pdf
