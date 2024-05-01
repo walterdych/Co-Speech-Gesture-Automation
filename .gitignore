@@ -1,7 +1,7 @@
 !*/: Annotations/EST_VIDEO_gestures_found_elan_apexes.csv
 !*/: **/TEST_VIDEO*
 
-
+*.csv
 *.log
 *.txt
 *.json
