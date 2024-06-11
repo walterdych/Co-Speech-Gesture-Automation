@@ -32,8 +32,8 @@ Also provided is a list of the packages utilized by this repo:
 
 The repository is straightforward and flexible and designed to where the only parameters needing change should be the specific locations and articulators of interest.  
 
-![Flow Chart](repo_flow_chart.drawio.png)
+![Flow Chart](docs/repo_flow_chart.drawio.png)
 
 Each notebook will have a step-by-step walkthrough for using each and its applications.
 
-The notebooks can be modified to either run batch processes or individual files. It is intended to run on supercomputing resources, though, it is still possible to run on person machines as well.
+The notebooks can be modified to either run batch processes or individual files. It is intended to run on supercomputing resources, though, it is still possible to run on personal machines as well.

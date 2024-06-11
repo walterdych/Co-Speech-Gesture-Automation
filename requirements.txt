@@ -1,6 +1,6 @@
 opencv-python-headless
 matplotlib
-mediapipe<=0.10.3
+mediapipe<=0.10.5
 numpy
 pandas
 plotly
