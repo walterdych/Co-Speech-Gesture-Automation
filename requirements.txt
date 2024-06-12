@@ -9,3 +9,5 @@ scikit-learn
 seaborn
 statsmodels
 tqdm
+phonlab @ git+https://github.com/rsprouse/phonlab
+audiolabel @ git+https://github.com/rsprouse/audiolabel
